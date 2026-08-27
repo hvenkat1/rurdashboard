@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>RUR — T7 & T8 Finals R1 Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d14;--surface:#12141e;--surface2:#1a1d2c;--surface3:#22263a;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0eff6;--muted:#7a7d95;--hint:#3e4160;
+  --orange:#f5820a;--gold:#f5c430;--green:#2dce6e;--red:#f04f4f;
+  --blue:#3b82f6;--purple:#8b5cf6;
+}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+#listView{display:block}
+.list-header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100}
+.list-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:1px}
+.list-sub{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:0.5px}
+.search-wrap{padding:10px 14px 0}
+.search-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);font-family:'Barlow',sans-serif;outline:none}
+.search-input:focus{border-color:var(--orange)}
+.search-input::placeholder{color:var(--hint)}
+.filter-row{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.filter-btn{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;flex-shrink:0;transition:all 0.15s}
+.filter-btn.active{background:rgba(245,130,10,0.12);border-color:rgba(245,130,10,0.35);color:var(--orange)}
+.col-header{display:grid;grid-template-columns:36px 1fr 36px 36px 28px 42px;gap:4px;align-items:center;padding:6px 14px 4px;border-bottom:1px solid var(--border)}
+.col-lbl{font-size:9px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px;text-align:center}
+.col-lbl:nth-child(2){text-align:left}
+.player-list{padding:8px 14px 80px}
+.player-row{display:grid;grid-template-columns:36px 1fr 36px 36px 28px 42px;gap:4px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:5px;cursor:pointer;transition:border-color 0.15s,background 0.15s}
+.player-row:hover{border-color:var(--orange);background:var(--surface2)}
+.pr-rank{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;text-align:center}
+.pr-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-team{font-size:9px;color:var(--muted);margin-top:1px}
+.pr-num{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;text-align:center;line-height:1}
+.pr-tp{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold);text-align:right}
+.rp-gold{color:var(--gold)}.rp-silver{color:#c0c0c0}.rp-bronze{color:#cd7f32}.rp-norm{color:var(--muted)}
+
+#profileView{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);overflow-y:auto;z-index:200}
+.profile-header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10}
+.back-btn{background:transparent;border:1px solid var(--border2);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--muted);cursor:pointer;flex-shrink:0}
+.ph-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-tag{font-size:10px;color:var(--muted)}
+.profile-body{padding:12px 14px 60px;max-width:480px;margin:0 auto}
+
+.nav-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:14px;overflow-x:auto}
+.nav-tab{padding:9px 12px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:0.5px;text-transform:uppercase;flex-shrink:0}
+.nav-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
+.panel{display:none}.panel.active{display:block}
+
+.hero{background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-25px;right:-25px;width:80px;height:80px;background:var(--orange);opacity:0.04;border-radius:50%}
+.hero-ign{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:900;letter-spacing:0.5px}
+.hero-sub{font-size:10px;color:var(--muted);margin-bottom:10px}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.hs{background:var(--surface3);border-radius:7px;padding:7px 3px;text-align:center}
+.hs-val{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;line-height:1}
+.hs-lbl{font-size:8px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.3px}
+
+.sec{display:flex;align-items:center;gap:8px;margin:12px 0 7px}
+.sec-lbl{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap}
+.sec-line{flex:1;height:1px;background:var(--border)}
+
+.arch-row{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:10px}
+.arch-pill{border-radius:20px;padding:3px 10px;font-size:9px;font-weight:700;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px;white-space:nowrap}
+.arch-desc{font-size:10px;color:var(--muted);line-height:1.4}
+
+.skill-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:5px;display:flex;align-items:center;gap:9px}
+.skill-score-box{background:var(--surface2);border-radius:7px;width:40px;min-width:40px;height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.skill-score{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;line-height:1}
+.skill-score-of{font-size:8px;color:var(--muted)}
+.skill-info{flex:1;min-width:0}
+.skill-name{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}
+.skill-emp{font-size:9px;color:var(--muted);margin-bottom:5px}
+.bar-bg{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+.top-badge{background:var(--surface2);border-radius:6px;padding:3px 7px;min-width:42px;text-align:center;flex-shrink:0}
+.top-pct{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700}
+.top-of{font-size:8px;color:var(--muted)}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px}
+.stat-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:3px}
+.stat-val{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;line-height:1}
+.stat-sub{font-size:9px;color:var(--hint);margin-top:3px}
+
+canvas{display:block;margin:0 auto}
+</style>
+</head>
+<body>
+
+<div id="listView">
+  <div class="list-header">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="list-title"><span style="color:var(--orange)">RUR</span> · T7 & T8 Finals R1</div>
+        <div class="list-sub">ERANGEL · 24 AUG 2026 · 76 PLAYERS · 20 TEAMS</div>
+      </div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:10px;color:var(--muted);text-align:right">SKILL<br>DASHBOARD</div>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" placeholder="Search player or team..." oninput="renderList()">
+  </div>
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('T7',this)">T7 Only</button>
+    <button class="filter-btn" onclick="setFilter('T8',this)">T8 Only</button>
+    <button class="filter-btn" onclick="setFilter('kills',this)">Top Kills</button>
+    <button class="filter-btn" onclick="setFilter('tp',this)">Top Points</button>
+    <button class="filter-btn" onclick="setFilter('hs',this)">Top Precision</button>
+    <button class="filter-btn" onclick="setFilter('pressure',this)">Top Pressure</button>
+  </div>
+  <div class="col-header">
+    <div class="col-lbl">Rank</div>
+    <div class="col-lbl">Player</div>
+    <div class="col-lbl">K</div>
+    <div class="col-lbl">KN</div>
+    <div class="col-lbl">HS</div>
+    <div class="col-lbl">TP</div>
+  </div>
+  <div class="player-list" id="playerList"></div>
+</div>
+
+<div id="profileView">
+  <div class="profile-header">
+    <button class="back-btn" onclick="closeProfile()">← Back</button>
+    <div>
+      <div class="ph-name" id="phName"></div>
+      <div class="ph-tag" id="phTag"></div>
+    </div>
+  </div>
+  <div class="profile-body">
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="switchTab('overview',this)">Overview</div>
+      <div class="nav-tab" onclick="switchTab('skills',this)">Skills</div>
+      <div class="nav-tab" onclick="switchTab('stats',this)">Stats</div>
+    </div>
+    <div id="panel-overview" class="panel active">
+      <div class="hero">
+        <div class="hero-ign" id="heroIGN"></div>
+        <div class="hero-sub" id="heroSub"></div>
+        <div class="hero-stats" id="heroStats"></div>
+      </div>
+      <div id="archRow"></div>
+      <div class="sec"><div class="sec-lbl">Performance radar</div><div class="sec-line"></div></div>
+      <canvas id="radarCanvas" width="260" height="190" style="width:100%;max-width:260px"></canvas>
+    </div>
+    <div id="panel-skills" class="panel">
+      <div class="sec"><div class="sec-lbl">Employability skill scores</div><div class="sec-line"></div></div>
+      <div id="skillList"></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:9px 11px;margin-top:6px;font-size:10px;color:var(--muted);line-height:1.6">
+        Scores normalised across all 76 players in this pool. Top % = share of pool outperformed on each dimension.
+      </div>
+    </div>
+    <div id="panel-stats" class="panel">
+      <div class="sec"><div class="sec-lbl">Combat</div><div class="sec-line"></div></div>
+      <div class="stat-grid" id="combatGrid"></div>
+      <div class="sec"><div class="sec-lbl">Kill feed</div><div class="sec-line"></div></div>
+      <div class="stat-grid" id="kfGrid"></div>
+      <div class="sec"><div class="sec-lbl">Points</div><div class="sec-line"></div></div>
+      <div class="stat-grid" id="ptsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL = [{"name": "BLxSOHALI", "team": "T8 Team 6", "territory": "T8", "rank": 1, "pp": 10, "fp": 12, "tp": 22, "kills": 10, "knocks": 8, "headshots": 0, "late_kills": 9, "zone_deaths": 0, "surv_pct": 100.0, "team_kills": 12, "contrib_pct": 83.3, "status": "alive", "fav_weapon": "m416", "skills": {"execution": {"score": 5, "top": 1, "raw": 10}, "teamwork": {"score": 4.2, "top": 7, "raw": 83.3}, "risk_mgmt": {"score": 5, "top": 1, "raw": 10}, "resilience": {"score": 5, "top": 5, "raw": 100.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 5, "top": 1, "raw": 9}}, "is_chicken": true}, {"name": "TeamVSHxMIKAMI", "team": "T7 Team 9", "territory": "T7", "rank": 3, "pp": 5, "fp": 11, "tp": 16, "kills": 5, "knocks": 1, "headshots": 1, "late_kills": 3, "zone_deaths": 0, "surv_pct": 90.0, "team_kills": 11, "contrib_pct": 45.5, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 2.5, "top": 3, "raw": 5}, "teamwork": {"score": 2.3, "top": 18, "raw": 45.5}, "risk_mgmt": {"score": 2.5, "top": 3, "raw": 5}, "resilience": {"score": 4.5, "top": 14, "raw": 90.0}, "precision": {"score": 1.0, "top": 16, "raw": 20.0}, "pressure": {"score": 1.7, "top": 5, "raw": 3}}, "is_chicken": false}, {"name": "RFC• SAMRAJ", "team": "T7 Team 11", "territory": "T7", "rank": 2, "pp": 6, "fp": 13, "tp": 19, "kills": 4, "knocks": 3, "headshots": 0, "late_kills": 2, "zone_deaths": 0, "surv_pct": 95.0, "team_kills": 13, "contrib_pct": 30.8, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 2.0, "top": 7, "raw": 4}, "teamwork": {"score": 1.5, "top": 30, "raw": 30.8}, "risk_mgmt": {"score": 2.0, "top": 7, "raw": 4}, "resilience": {"score": 4.7, "top": 11, "raw": 95.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 1.1, "top": 8, "raw": 2}}, "is_chicken": false}, {"name": "VcSxZynxOP", "team": "T7 Team 11", "territory": "T7", "rank": 2, "pp": 6, "fp": 13, "tp": 19, "kills": 4, "knocks": 2, "headshots": 2, "late_kills": 4, "zone_deaths": 0, "surv_pct": 95.0, "team_kills": 13, "contrib_pct": 30.8, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 2.0, "top": 7, "raw": 4}, "teamwork": {"score": 1.5, "top": 30, "raw": 30.8}, "risk_mgmt": {"score": 2.0, "top": 7, "raw": 4}, "resilience": {"score": 4.7, "top": 11, "raw": 95.0}, "precision": {"score": 2.5, "top": 11, "raw": 50.0}, "pressure": {"score": 2.2, "top": 3, "raw": 4}}, "is_chicken": false}, {"name": "GHzDOPEOG", "team": "T8 Team 2", "territory": "T8", "rank": 4, "pp": 4, "fp": 7, "tp": 11, "kills": 4, "knocks": 2, "headshots": 0, "late_kills": 1, "zone_deaths": 0, "surv_pct": 85.0, "team_kills": 7, "contrib_pct": 57.1, "status": "dead", "fav_weapon": "S12K", "skills": {"execution": {"score": 2.0, "top": 7, "raw": 4}, "teamwork": {"score": 2.9, "top": 11, "raw": 57.1}, "risk_mgmt": {"score": 2.0, "top": 7, "raw": 4}, "resilience": {"score": 4.2, "top": 20, "raw": 85.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "Kapattzavya", "team": "T7 Team 11", "territory": "T7", "rank": 2, "pp": 6, "fp": 13, "tp": 19, "kills": 3, "knocks": 3, "headshots": 1, "late_kills": 1, "zone_deaths": 0, "surv_pct": 95.0, "team_kills": 13, "contrib_pct": 23.1, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 1.5, "top": 12, "raw": 3}, "teamwork": {"score": 1.2, "top": 39, "raw": 23.1}, "risk_mgmt": {"score": 1.5, "top": 12, "raw": 3}, "resilience": {"score": 4.7, "top": 11, "raw": 95.0}, "precision": {"score": 1.7, "top": 14, "raw": 33.3}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "M7xAURÀ", "team": "T7 Team 9", "territory": "T7", "rank": 3, "pp": 5, "fp": 11, "tp": 16, "kills": 3, "knocks": 4, "headshots": 1, "late_kills": 1, "zone_deaths": 0, "surv_pct": 90.0, "team_kills": 11, "contrib_pct": 27.3, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 1.5, "top": 12, "raw": 3}, "teamwork": {"score": 1.4, "top": 34, "raw": 27.3}, "risk_mgmt": {"score": 1.5, "top": 12, "raw": 3}, "resilience": {"score": 4.5, "top": 14, "raw": 90.0}, "precision": {"score": 1.7, "top": 14, "raw": 33.3}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "TeamVSHxSCOTCH", "team": "T7 Team 9", "territory": "T7", "rank": 3, "pp": 5, "fp": 11, "tp": 16, "kills": 3, "knocks": 4, "headshots": 0, "late_kills": 3, "zone_deaths": 0, "surv_pct": 90.0, "team_kills": 11, "contrib_pct": 27.3, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 1.5, "top": 12, "raw": 3}, "teamwork": {"score": 1.4, "top": 34, "raw": 27.3}, "risk_mgmt": {"score": 1.5, "top": 12, "raw": 3}, "resilience": {"score": 4.5, "top": 14, "raw": 90.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 1.7, "top": 5, "raw": 3}}, "is_chicken": false}, {"name": "CROWNSxHIREEN", "team": "T7 Team 5", "territory": "T7", "rank": 6, "pp": 1, "fp": 4, "tp": 5, "kills": 3, "knocks": 4, "headshots": 1, "late_kills": 1, "zone_deaths": 0, "surv_pct": 75.0, "team_kills": 4, "contrib_pct": 75.0, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 1.5, "top": 12, "raw": 3}, "teamwork": {"score": 3.8, "top": 8, "raw": 75.0}, "risk_mgmt": {"score": 1.5, "top": 12, "raw": 3}, "resilience": {"score": 3.7, "top": 30, "raw": 75.0}, "precision": {"score": 1.7, "top": 14, "raw": 33.3}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "Bunny", "team": "T7 Team 11", "territory": "T7", "rank": 2, "pp": 6, "fp": 13, "tp": 19, "kills": 2, "knocks": 2, "headshots": 1, "late_kills": 1, "zone_deaths": 0, "surv_pct": 95.0, "team_kills": 13, "contrib_pct": 15.4, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 0.8, "top": 41, "raw": 15.4}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 4.7, "top": 11, "raw": 95.0}, "precision": {"score": 2.5, "top": 11, "raw": 50.0}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "RTS×Rpower", "team": "T8 Team 2", "territory": "T8", "rank": 4, "pp": 4, "fp": 7, "tp": 11, "kills": 2, "knocks": 2, "headshots": 1, "late_kills": 0, "zone_deaths": 0, "surv_pct": 85.0, "team_kills": 7, "contrib_pct": 28.6, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 1.4, "top": 32, "raw": 28.6}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 4.2, "top": 20, "raw": 85.0}, "precision": {"score": 2.5, "top": 11, "raw": 50.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "ToxicJagguuu", "team": "T7 Team 3", "territory": "T7", "rank": 5, "pp": 1, "fp": 4, "tp": 5, "kills": 2, "knocks": 2, "headshots": 0, "late_kills": 1, "zone_deaths": 0, "surv_pct": 80.0, "team_kills": 4, "contrib_pct": 50.0, "status": "dead", "fav_weapon": "Mini14", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 2.5, "top": 17, "raw": 50.0}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 3.9, "top": 25, "raw": 80.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "LOVERxISxLIVE", "team": "T7 Team 3", "territory": "T7", "rank": 5, "pp": 1, "fp": 4, "tp": 5, "kills": 2, "knocks": 2, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 80.0, "team_kills": 4, "contrib_pct": 50.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 2.5, "top": 17, "raw": 50.0}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 3.9, "top": 25, "raw": 80.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "IKnightxFaizan", "team": "T8 Team 9", "territory": "T8", "rank": 8, "pp": 2, "fp": 2, "tp": 4, "kills": 2, "knocks": 1, "headshots": 0, "late_kills": 2, "zone_deaths": 0, "surv_pct": 65.0, "team_kills": 2, "contrib_pct": 100.0, "status": "dead", "fav_weapon": "DBS", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 5, "top": 5, "raw": 100.0}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 3.2, "top": 41, "raw": 65.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 1.1, "top": 8, "raw": 2}}, "is_chicken": false}, {"name": "bandipagluu", "team": "T7 Team 2", "territory": "T7", "rank": 9, "pp": 0, "fp": 4, "tp": 4, "kills": 2, "knocks": 1, "headshots": 1, "late_kills": 0, "zone_deaths": 0, "surv_pct": 60.0, "team_kills": 4, "contrib_pct": 50.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 2.5, "top": 17, "raw": 50.0}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 2.9, "top": 46, "raw": 60.0}, "precision": {"score": 2.5, "top": 11, "raw": 50.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "IFxSYTHE", "team": "T8 Team 7", "territory": "T8", "rank": 11, "pp": 0, "fp": 3, "tp": 3, "kills": 2, "knocks": 1, "headshots": 1, "late_kills": 0, "zone_deaths": 0, "surv_pct": 50.0, "team_kills": 3, "contrib_pct": 66.7, "status": "dead", "fav_weapon": "SCAR-L", "skills": {"execution": {"score": 1.0, "top": 21, "raw": 2}, "teamwork": {"score": 3.3, "top": 9, "raw": 66.7}, "risk_mgmt": {"score": 1.0, "top": 21, "raw": 2}, "resilience": {"score": 2.4, "top": 57, "raw": 50.0}, "precision": {"score": 2.5, "top": 11, "raw": 50.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "ALM HYNTRIX", "team": "T8 Team 6", "territory": "T8", "rank": 1, "pp": 10, "fp": 12, "tp": 22, "kills": 1, "knocks": 2, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 100.0, "team_kills": 12, "contrib_pct": 8.3, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 0.4, "top": 45, "raw": 8.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 5, "top": 5, "raw": 100.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": true}, {"name": "SBdrigon", "team": "T8 Team 6", "territory": "T8", "rank": 1, "pp": 10, "fp": 12, "tp": 22, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 1, "zone_deaths": 1, "surv_pct": 100.0, "team_kills": 12, "contrib_pct": 8.3, "status": "alive", "fav_weapon": "SCAR-L", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 0.4, "top": 45, "raw": 8.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 5, "top": 5, "raw": 100.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": true}, {"name": "GHzAlexOg", "team": "T8 Team 2", "territory": "T8", "rank": 4, "pp": 4, "fp": 7, "tp": 11, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 85.0, "team_kills": 7, "contrib_pct": 14.3, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 0.7, "top": 42, "raw": 14.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 4.2, "top": 20, "raw": 85.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "IOSxJANVAR", "team": "T7 Team 5", "territory": "T7", "rank": 6, "pp": 1, "fp": 4, "tp": 5, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 1, "zone_deaths": 0, "surv_pct": 75.0, "team_kills": 4, "contrib_pct": 25.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.2, "top": 38, "raw": 25.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 3.7, "top": 30, "raw": 75.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "SENxSAHiL", "team": "T8 Team 4", "territory": "T8", "rank": 7, "pp": 3, "fp": 1, "tp": 4, "kills": 1, "knocks": 0, "headshots": 0, "late_kills": 1, "zone_deaths": 0, "surv_pct": 70.0, "team_kills": 1, "contrib_pct": 100.0, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 5, "top": 5, "raw": 100.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 3.4, "top": 36, "raw": 70.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0.6, "top": 20, "raw": 1}}, "is_chicken": false}, {"name": "『NÍNJA』øp", "team": "T7 Team 2", "territory": "T7", "rank": 9, "pp": 0, "fp": 4, "tp": 4, "kills": 1, "knocks": 2, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 60.0, "team_kills": 4, "contrib_pct": 25.0, "status": "dead", "fav_weapon": "QBZ", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.2, "top": 38, "raw": 25.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.9, "top": 46, "raw": 60.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "INDジNARUToジ", "team": "T7 Team 2", "territory": "T7", "rank": 9, "pp": 0, "fp": 4, "tp": 4, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 60.0, "team_kills": 4, "contrib_pct": 25.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.2, "top": 38, "raw": 25.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.9, "top": 46, "raw": 60.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GTXERWIN", "team": "T8 Team 5", "territory": "T8", "rank": 10, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 55.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "M762", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.6, "top": 51, "raw": 55.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "ARxGOKUx", "team": "T8 Team 5", "territory": "T8", "rank": 10, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 55.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "ASM Abakan", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.6, "top": 51, "raw": 55.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GTXGHOST", "team": "T8 Team 5", "territory": "T8", "rank": 10, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 55.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "car", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.6, "top": 51, "raw": 55.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "Gdxshadowo3", "team": "T8 Team 7", "territory": "T8", "rank": 11, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 50.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "BIZON", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.4, "top": 57, "raw": 50.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "UNSTOPĀBLE", "team": "T7 Team 6", "territory": "T7", "rank": 12, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 45.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "UMP45", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.1, "top": 62, "raw": 45.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "STYLO父SURAJ", "team": "T7 Team 6", "territory": "T7", "rank": 12, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 1, "late_kills": 0, "zone_deaths": 0, "surv_pct": 45.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "grenade", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.1, "top": 62, "raw": 45.0}, "precision": {"score": 5, "top": 4, "raw": 100.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "〜SWAPNILxOP", "team": "T7 Team 6", "territory": "T7", "rank": 12, "pp": 0, "fp": 3, "tp": 3, "kills": 1, "knocks": 1, "headshots": 1, "late_kills": 0, "zone_deaths": 0, "surv_pct": 45.0, "team_kills": 3, "contrib_pct": 33.3, "status": "dead", "fav_weapon": "DBS", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 1.7, "top": 28, "raw": 33.3}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 2.1, "top": 62, "raw": 45.0}, "precision": {"score": 5, "top": 4, "raw": 100.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GHzNiHALOG", "team": "T8 Team 1", "territory": "T8", "rank": 13, "pp": 0, "fp": 2, "tp": 2, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 40.0, "team_kills": 2, "contrib_pct": 50.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 2.5, "top": 17, "raw": 50.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 1.8, "top": 67, "raw": 40.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GHzSTAR", "team": "T8 Team 1", "territory": "T8", "rank": 13, "pp": 0, "fp": 2, "tp": 2, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 40.0, "team_kills": 2, "contrib_pct": 50.0, "status": "dead", "fav_weapon": "grenade", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 2.5, "top": 17, "raw": 50.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 1.8, "top": 67, "raw": 40.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "TeamUIxBabban", "team": "T8 Team 3", "territory": "T8", "rank": 14, "pp": 0, "fp": 1, "tp": 1, "kills": 1, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 35.0, "team_kills": 1, "contrib_pct": 100.0, "status": "dead", "fav_weapon": "S12K", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 5, "top": 5, "raw": 100.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 1.6, "top": 72, "raw": 35.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "Ｓ么卄ＩＬYTzz", "team": "T7 Team 1", "territory": "T7", "rank": 15, "pp": 0, "fp": 1, "tp": 1, "kills": 1, "knocks": 2, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 30.0, "team_kills": 1, "contrib_pct": 100.0, "status": "dead", "fav_weapon": "AUG", "skills": {"execution": {"score": 0.5, "top": 45, "raw": 1}, "teamwork": {"score": 5, "top": 5, "raw": 100.0}, "risk_mgmt": {"score": 0.5, "top": 45, "raw": 1}, "resilience": {"score": 1.3, "top": 78, "raw": 30.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "BLxJAICKY", "team": "T8 Team 6", "territory": "T8", "rank": 1, "pp": 10, "fp": 12, "tp": 22, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 100.0, "team_kills": 12, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 5, "top": 5, "raw": 100.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": true}, {"name": "GhzShivamOg", "team": "T8 Team 2", "territory": "T8", "rank": 4, "pp": 4, "fp": 7, "tp": 11, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 85.0, "team_kills": 7, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 4.2, "top": 20, "raw": 85.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "» » » NICK", "team": "T7 Team 3", "territory": "T7", "rank": 5, "pp": 1, "fp": 4, "tp": 5, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 80.0, "team_kills": 4, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.9, "top": 25, "raw": 80.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "亗TRSツAshuu亗", "team": "T7 Team 3", "territory": "T7", "rank": 5, "pp": 1, "fp": 4, "tp": 5, "kills": 0, "knocks": 0, "headshots": 1, "late_kills": 0, "zone_deaths": 0, "surv_pct": 80.0, "team_kills": 4, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.9, "top": 25, "raw": 80.0}, "precision": {"score": 5, "top": 4, "raw": 100.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "HBKadir123", "team": "T7 Team 5", "territory": "T7", "rank": 6, "pp": 1, "fp": 4, "tp": 5, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 75.0, "team_kills": 4, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.7, "top": 30, "raw": 75.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "HBshaban123", "team": "T7 Team 5", "territory": "T7", "rank": 6, "pp": 1, "fp": 4, "tp": 5, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 75.0, "team_kills": 4, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.7, "top": 30, "raw": 75.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "VANSHU。ISLIVE", "team": "T8 Team 4", "territory": "T8", "rank": 7, "pp": 3, "fp": 1, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 70.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.4, "top": 36, "raw": 70.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "TGxACEoG", "team": "T8 Team 4", "territory": "T8", "rank": 7, "pp": 3, "fp": 1, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 70.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.4, "top": 36, "raw": 70.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "〜40FPS", "team": "T8 Team 4", "territory": "T8", "rank": 7, "pp": 3, "fp": 1, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 70.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.4, "top": 36, "raw": 70.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "AWGxZynXOP", "team": "T8 Team 9", "territory": "T8", "rank": 8, "pp": 2, "fp": 2, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 65.0, "team_kills": 2, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.2, "top": 41, "raw": 65.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "ThoBetaAisaH", "team": "T8 Team 9", "territory": "T8", "rank": 8, "pp": 2, "fp": 2, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 65.0, "team_kills": 2, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.2, "top": 41, "raw": 65.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "IFxDHEERAJ", "team": "T8 Team 9", "territory": "T8", "rank": 8, "pp": 2, "fp": 2, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 65.0, "team_kills": 2, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 3.2, "top": 41, "raw": 65.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "kaushal2823", "team": "T7 Team 2", "territory": "T7", "rank": 9, "pp": 0, "fp": 4, "tp": 4, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 60.0, "team_kills": 4, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 2.9, "top": 46, "raw": 60.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GTxAKAZA", "team": "T8 Team 5", "territory": "T8", "rank": 10, "pp": 0, "fp": 3, "tp": 3, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 55.0, "team_kills": 3, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 2.6, "top": 51, "raw": 55.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "IFxKEVINN", "team": "T8 Team 7", "territory": "T8", "rank": 11, "pp": 0, "fp": 3, "tp": 3, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 50.0, "team_kills": 3, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "car", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 2.4, "top": 57, "raw": 50.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "KALEGARAAAAA", "team": "T8 Team 7", "territory": "T8", "rank": 11, "pp": 0, "fp": 3, "tp": 3, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 1, "surv_pct": 50.0, "team_kills": 3, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 2.4, "top": 57, "raw": 50.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "STYLO父JACK", "team": "T7 Team 6", "territory": "T7", "rank": 12, "pp": 0, "fp": 3, "tp": 3, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 45.0, "team_kills": 3, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 2.1, "top": 62, "raw": 45.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GHzMARCOSgg", "team": "T8 Team 1", "territory": "T8", "rank": 13, "pp": 0, "fp": 2, "tp": 2, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 40.0, "team_kills": 2, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.8, "top": 67, "raw": 40.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "GHzGOKU", "team": "T8 Team 1", "territory": "T8", "rank": 13, "pp": 0, "fp": 2, "tp": 2, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 40.0, "team_kills": 2, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.8, "top": 67, "raw": 40.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "SOsNOOB", "team": "T8 Team 3", "territory": "T8", "rank": 14, "pp": 0, "fp": 1, "tp": 1, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 35.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "UMP45", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.6, "top": 72, "raw": 35.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "SOsMaaN7", "team": "T8 Team 3", "territory": "T8", "rank": 14, "pp": 0, "fp": 1, "tp": 1, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 35.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.6, "top": 72, "raw": 35.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "ĪGOKUĪUIĪON", "team": "T8 Team 3", "territory": "T8", "rank": 14, "pp": 0, "fp": 1, "tp": 1, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 35.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.6, "top": 72, "raw": 35.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "么HB么Bashar么", "team": "T7 Team 1", "territory": "T7", "rank": 15, "pp": 0, "fp": 1, "tp": 1, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 30.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "BIZON", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.3, "top": 78, "raw": 30.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "Mr・・Pineappl", "team": "T7 Team 1", "territory": "T7", "rank": 15, "pp": 0, "fp": 1, "tp": 1, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 30.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "m416", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.3, "top": 78, "raw": 30.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "义HBū义ūKAIF", "team": "T7 Team 1", "territory": "T7", "rank": 15, "pp": 0, "fp": 1, "tp": 1, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 30.0, "team_kills": 1, "contrib_pct": 0.0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0.0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.3, "top": 78, "raw": 30.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "Afreen2580", "team": "T7 Team 10", "territory": "T7", "rank": 16, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 25.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.1, "top": 83, "raw": 25.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "SamrithaNair", "team": "T7 Team 10", "territory": "T7", "rank": 16, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 25.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.1, "top": 83, "raw": 25.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "panda0102Đ439", "team": "T7 Team 10", "territory": "T7", "rank": 16, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 1, "surv_pct": 25.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.1, "top": 83, "raw": 25.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "aayein〆baigan", "team": "T7 Team 10", "territory": "T7", "rank": 16, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 1, "surv_pct": 25.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 1.1, "top": 83, "raw": 25.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "ARCxAnubhavMNc", "team": "T7 Team 8", "territory": "T7", "rank": 17, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 20.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.8, "top": 86, "raw": 20.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "RRxShubhamBot", "team": "T7 Team 8", "territory": "T7", "rank": 17, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 20.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.8, "top": 86, "raw": 20.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "义HB义NUMAN义", "team": "T7 Team 7", "territory": "T7", "rank": 18, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 15.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.5, "top": 89, "raw": 15.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "义HB义Faisal 义", "team": "T7 Team 7", "territory": "T7", "rank": 18, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 15.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.5, "top": 89, "raw": 15.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "义HB义MAKBool", "team": "T7 Team 7", "territory": "T7", "rank": 18, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 15.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "BIZON", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.5, "top": 89, "raw": 15.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "Jèñü", "team": "T8 Team 10", "territory": "T8", "rank": 19, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 10.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "DBS", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.3, "top": 95, "raw": 10.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "IFxPHYSCO", "team": "T8 Team 10", "territory": "T8", "rank": 19, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 10.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.3, "top": 95, "raw": 10.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "SanchitPichaK", "team": "T8 Team 10", "territory": "T8", "rank": 19, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 10.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.3, "top": 95, "raw": 10.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "INFLCTxRAHUL", "team": "T8 Team 10", "territory": "T8", "rank": 19, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 10.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0.3, "top": 95, "raw": 10.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "Ūūū〜Kai", "team": "T7 Team 4", "territory": "T7", "rank": 20, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 5.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0, "top": 100, "raw": 5.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "addyyy78", "team": "T7 Team 4", "territory": "T7", "rank": 20, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 5.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0, "top": 100, "raw": 5.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "TAGxज3", "team": "T7 Team 4", "territory": "T7", "rank": 20, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 0, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 5.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "N/A", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0, "top": 100, "raw": 5.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}, {"name": "『MR』BADLUCK", "team": "T7 Team 4", "territory": "T7", "rank": 20, "pp": 0, "fp": 0, "tp": 0, "kills": 0, "knocks": 1, "headshots": 0, "late_kills": 0, "zone_deaths": 0, "surv_pct": 5.0, "team_kills": 0, "contrib_pct": 0, "status": "dead", "fav_weapon": "M762", "skills": {"execution": {"score": 0, "top": 100, "raw": 0}, "teamwork": {"score": 0, "top": 100, "raw": 0}, "risk_mgmt": {"score": 0, "top": 100, "raw": 0}, "resilience": {"score": 0, "top": 100, "raw": 5.0}, "precision": {"score": 0, "top": 100, "raw": 0.0}, "pressure": {"score": 0, "top": 100, "raw": 0}}, "is_chicken": false}];
+
+const SKILLS = [
+  {key:'execution',  label:'Execution',    emp:'Drive & Delivery',           color:'#f5820a'},
+  {key:'teamwork',   label:'Teamwork',     emp:'Collaboration',              color:'#3b82f6'},
+  {key:'risk_mgmt',  label:'Risk Mgmt',    emp:'Judgment & Strategy',        color:'#8b5cf6'},
+  {key:'resilience', label:'Resilience',   emp:'Adaptability',               color:'#2dce6e'},
+  {key:'precision',  label:'Precision',    emp:'Attention to Detail',        color:'#f5c430'},
+  {key:'pressure',   label:'Pressure Mgmt',emp:'Performance Under Pressure', color:'#f04f4f'},
+];
+
+const ARCHETYPES = [
+  {label:'CLUTCH PERFORMER',  color:'#f472b6',bg:'rgba(244,114,182,0.1)',border:'rgba(244,114,182,0.2)', desc:'Rises to the occasion when stakes are highest.',        check:p=>p.skills.pressure.score>=3.5&&p.skills.execution.score>=2.5},
+  {label:'SHARPSHOOTER',      color:'#f5c430',bg:'rgba(245,196,48,0.1)', border:'rgba(245,196,48,0.2)',  desc:'Precision over volume — every shot counts.',            check:p=>p.skills.precision.score>=3.5},
+  {label:'TEAM ANCHOR',       color:'#3b82f6',bg:'rgba(59,130,246,0.1)', border:'rgba(59,130,246,0.2)',  desc:'Primary driver of team output.',                        check:p=>p.skills.teamwork.score>=3.5},
+  {label:'SURVIVOR',          color:'#2dce6e',bg:'rgba(45,206,110,0.1)', border:'rgba(45,206,110,0.2)',  desc:'Consistently outlasts opponents through smart play.',    check:p=>p.skills.resilience.score>=4.0},
+  {label:'AGGRESSIVE FRAGGER',color:'#f5820a',bg:'rgba(245,130,10,0.1)', border:'rgba(245,130,10,0.2)',  desc:'High kill output — takes the fight to the enemy.',      check:p=>p.skills.execution.score>=3.0},
+  {label:'ALL-ROUNDER',       color:'#7a7d95',bg:'rgba(122,125,149,0.1)',border:'rgba(122,125,149,0.2)', desc:'Balanced across all skill dimensions.',                 check:()=>true},
+];
+
+let activeFilter = 'all';
+
+// Use index as key — avoids all special character issues with names
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function renderList() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let pool = ALL.map((p,i)=>({...p, _idx:i}));
+  if (activeFilter==='T7') pool = pool.filter(p=>p.territory==='T7');
+  else if (activeFilter==='T8') pool = pool.filter(p=>p.territory==='T8');
+  else if (activeFilter==='kills') pool.sort((a,b)=>b.kills-a.kills||b.tp-a.tp);
+  else if (activeFilter==='tp') pool.sort((a,b)=>b.tp-a.tp||b.kills-a.kills);
+  else if (activeFilter==='hs') pool.sort((a,b)=>b.headshots-a.headshots||b.kills-a.kills);
+  else if (activeFilter==='pressure') pool.sort((a,b)=>b.late_kills-a.late_kills||b.kills-a.kills);
+  if (q) pool = pool.filter(p=>p.name.toLowerCase().includes(q)||p.team.toLowerCase().includes(q));
+
+  const rc = r => r===1?'rp-gold':r<=3?'rp-silver':r<=5?'rp-bronze':'rp-norm';
+
+  // Use data-idx so no string escaping needed for names
+  document.getElementById('playerList').innerHTML = pool.map(p => `
+    <div class="player-row" data-idx="${p._idx}" onclick="openProfile(this.dataset.idx)">
+      <div class="pr-rank ${rc(p.rank)}">#${p.rank}</div>
+      <div>
+        <div class="pr-name">${p.name}</div>
+        <div class="pr-team">${p.team}</div>
+      </div>
+      <div class="pr-num" style="color:#f5820a">${p.kills}</div>
+      <div class="pr-num" style="color:#8b5cf6">${p.knocks}</div>
+      <div class="pr-num" style="color:#f5c430">${p.headshots}</div>
+      <div class="pr-tp">${p.tp}</div>
+    </div>`).join('') || '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px">No players found</div>';
+}
+
+function openProfile(idx) {
+  const p = ALL[parseInt(idx)];
+  if (!p) return;
+  document.getElementById('listView').style.display = 'none';
+  document.getElementById('profileView').style.display = 'block';
+  document.getElementById('profileView').scrollTop = 0;
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
+  document.querySelector('.nav-tab').classList.add('active');
+  document.getElementById('panel-overview').classList.add('active');
+  renderProfile(p);
+}
+
+function closeProfile() {
+  document.getElementById('profileView').style.display = 'none';
+  document.getElementById('listView').style.display = 'block';
+}
+
+function renderProfile(p) {
+  document.getElementById('phName').textContent = p.name;
+  document.getElementById('phTag').textContent = p.team + ' · ' + p.territory + ' · Finals R1';
+  document.getElementById('heroIGN').textContent = p.name;
+  document.getElementById('heroSub').textContent = p.team + ' · ' + p.territory + ' · Erangel · 24 Aug 2026';
+
+  document.getElementById('heroStats').innerHTML = [
+    {v:p.kills,    l:'Kills',  c:'#f5820a'},
+    {v:p.knocks,   l:'Knocks', c:'#8b5cf6'},
+    {v:'#'+p.rank, l:'Rank',   c:p.rank<=3?'#f5c430':'#3b82f6'},
+    {v:p.tp+'TP',  l:'Points', c:'#f5c430'},
+  ].map(s=>`<div class="hs"><div class="hs-val" style="color:${s.c}">${s.v}</div><div class="hs-lbl">${s.l}</div></div>`).join('');
+
+  const arch = ARCHETYPES.find(a=>a.check(p));
+  document.getElementById('archRow').innerHTML =
+    `<div class="arch-row"><div class="arch-pill" style="color:${arch.color};background:${arch.bg};border:1px solid ${arch.border}">${arch.label}</div><div class="arch-desc">${arch.desc}</div></div>`;
+
+  drawRadar(p);
+
+  document.getElementById('skillList').innerHTML = SKILLS.map(sk=>{
+    const s=p.skills[sk.key];
+    const tc=s.top<=15?'#2dce6e':s.top<=35?'#f5820a':'#7a7d95';
+    return `<div class="skill-card">
+      <div class="skill-score-box"><div class="skill-score" style="color:${sk.color}">${s.score}</div><div class="skill-score-of">/5</div></div>
+      <div class="skill-info">
+        <div class="skill-name" style="color:${sk.color}">${sk.label}</div>
+        <div class="skill-emp">${sk.emp}</div>
+        <div class="bar-bg"><div class="bar-fill" style="width:${s.score/5*100}%;background:${sk.color}"></div></div>
+      </div>
+      <div class="top-badge"><div class="top-pct" style="color:${tc}">Top ${s.top}%</div><div class="top-of">of 76</div></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('combatGrid').innerHTML = [
+    {l:'Kills',        v:p.kills,           s:'direct eliminations', c:'#f5820a'},
+    {l:'Knocks',       v:p.knocks,          s:'players downed',      c:'#8b5cf6'},
+    {l:'Kill contrib', v:p.contrib_pct+'%', s:'of team kills',       c:'#3b82f6'},
+    {l:'Survival',     v:p.surv_pct+'%',    s:'survival rate',       c:'#2dce6e'},
+  ].map(s=>`<div class="stat-card"><div class="stat-lbl">${s.l}</div><div class="stat-val" style="color:${s.c}">${s.v}</div><div class="stat-sub">${s.s}</div></div>`).join('');
+
+  document.getElementById('kfGrid').innerHTML = [
+    {l:'Headshots',       v:p.headshots,  s:'precision kills',      c:'#f5c430'},
+    {l:'Late-game kills', v:p.late_kills, s:'pos 92+ in kill feed', c:'#f04f4f'},
+    {l:'Zone deaths',     v:p.zone_deaths,s:'caught by playzone',   c:p.zone_deaths===0?'#2dce6e':'#f04f4f'},
+    {l:'Fav weapon',      v:p.fav_weapon, s:'most used',            c:'#f5820a'},
+  ].map(s=>`<div class="stat-card"><div class="stat-lbl">${s.l}</div><div class="stat-val" style="color:${s.c};font-size:${String(s.v).length>6?'13px':'20px'}">${s.v}</div><div class="stat-sub">${s.s}</div></div>`).join('');
+
+  document.getElementById('ptsGrid').innerHTML = [
+    {l:'Total points', v:p.tp,      s:'PP + FP',          c:'#f5c430'},
+    {l:'Position pts', v:p.pp,      s:'placement reward',  c:'#3b82f6'},
+    {l:'Finish pts',   v:p.fp,      s:'kill points',       c:'#f5820a'},
+    {l:'Placement',    v:'#'+p.rank,s:'out of 20 teams',   c:p.rank<=3?'#f5c430':p.rank<=5?'#f5820a':'#7a7d95'},
+  ].map(s=>`<div class="stat-card"><div class="stat-lbl">${s.l}</div><div class="stat-val" style="color:${s.c}">${s.v}</div><div class="stat-sub">${s.s}</div></div>`).join('');
+}
+
+function drawRadar(p) {
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2+5, r=Math.min(W,H)*0.34;
+  const n=SKILLS.length;
+  const angles=SKILLS.map((_,i)=>(i/n)*Math.PI*2-Math.PI/2);
+  const vals=SKILLS.map(s=>p.skills[s.key].score/5);
+  const colors=SKILLS.map(s=>s.color);
+  const labels=SKILLS.map(s=>s.label);
+
+  [0.25,0.5,0.75,1].forEach(sc=>{
+    ctx.beginPath();
+    angles.forEach((a,i)=>{const x=cx+Math.cos(a)*r*sc,y=cy+Math.sin(a)*r*sc;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+    ctx.closePath();ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke();
+  });
+  angles.forEach(a=>{ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=1;ctx.stroke()});
+  ctx.beginPath();
+  angles.forEach((a,i)=>{const x=cx+Math.cos(a)*r*vals[i],y=cy+Math.sin(a)*r*vals[i];i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});
+  ctx.closePath();ctx.fillStyle='rgba(245,130,10,0.15)';ctx.fill();ctx.strokeStyle='#f5820a';ctx.lineWidth=2;ctx.stroke();
+  angles.forEach((a,i)=>{
+    const x=cx+Math.cos(a)*r*vals[i],y=cy+Math.sin(a)*r*vals[i];
+    ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fillStyle=colors[i];ctx.fill();
+  });
+  ctx.font='9px Barlow,sans-serif';ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.38)';
+  angles.forEach((a,i)=>{
+    ctx.fillText(labels[i],cx+Math.cos(a)*(r+15),cy+Math.sin(a)*(r+15)+3);
+  });
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(pn=>pn.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+renderList();
+</script>
+</body>
+</html>
